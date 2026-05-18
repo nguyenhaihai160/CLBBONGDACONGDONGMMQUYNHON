@@ -1,6 +1,0 @@
-# Đổi app.tenclb.com thành domain thật của anh.
-# Ví dụ: app.clbbongdaabc.com
-app.tenclb.com {
-    encode gzip zstd
-    reverse_proxy app:5173
-}
