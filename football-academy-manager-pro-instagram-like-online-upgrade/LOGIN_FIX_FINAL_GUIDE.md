@@ -12,7 +12,7 @@ Bản này sửa 3 lỗi hay gặp nhất khi chạy dạng app điện thoại/
 Desktop:
 
 ```txt
-http://localhost:5173/api/health
+http://localhost:4000/api/health
 http://localhost:4000/api/auth/debug
 ```
 

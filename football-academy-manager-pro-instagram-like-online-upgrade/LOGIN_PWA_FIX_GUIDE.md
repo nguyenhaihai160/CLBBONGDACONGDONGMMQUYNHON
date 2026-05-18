@@ -55,7 +55,7 @@ Admin@123
 Mở trình duyệt:
 
 ```txt
-http://localhost:5173/api/health
+http://localhost:4000/api/health
 ```
 
 Nếu đúng sẽ thấy:

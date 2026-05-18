@@ -1,33 +1,12 @@
-# Football Academy Manager Pro - GitHub Ready Version
+# Bản tối ưu 2026-05-17
 
-Bản này đã được kiểm tra và bổ sung các file cần thiết để đưa lên GitHub:
-
-- Có `package.json` ở thư mục gốc để tránh lỗi `npm ERR! enoent Could not read package.json` khi chạy nhầm ở root.
-- Có `.gitignore` và `.dockerignore` để không upload `node_modules`, `.env`, file build và dữ liệu nhạy cảm.
-- Docker single-port: web và API chạy chung tại cổng `5173`, phù hợp mở trên iPhone cùng Wi-Fi.
-- Backend build sẽ tự chạy `prisma generate` trước khi TypeScript compile.
-- Có GitHub Actions CI tại `.github/workflows/ci.yml`.
-- Xem checklist trước khi push tại `GITHUB_READY_CHECKLIST.md`.
-
-## Chạy nhanh nhất bằng Docker
+Khuyên dùng chạy bằng Docker single-port:
 
 ```bash
-copy .env.example .env
-docker compose up --build
+docker compose up -d --build
 ```
 
-Mở:
-
-```txt
-http://localhost:5173
-http://localhost:5173/api/health
-```
-
-Trên iPhone cùng Wi-Fi, thay `IP_MAY_TINH` bằng IPv4 của máy đang chạy Docker:
-
-```txt
-http://IP_MAY_TINH:5173
-```
+Mở `http://localhost:5173` trên máy tính hoặc `http://IP_MAY_TINH:5173` trên điện thoại cùng WiFi. Xem thêm `OPTIMIZED_RUN_GUIDE.md`.
 
 ---
 
@@ -95,8 +74,8 @@ npx prisma db seed
 
 Truy cập:
 
-- Frontend + Backend API: http://localhost:5173
-- Health check: http://localhost:5173/api/health
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:4000/api/health
 - PostgreSQL: localhost:5432
 
 Nếu trước đó đã chạy bản cũ và đăng nhập bị `Lỗi hệ thống`, hãy reset database một lần:

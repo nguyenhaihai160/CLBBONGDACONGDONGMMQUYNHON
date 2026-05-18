@@ -2,6 +2,9 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
+ARG DATABASE_URL="postgresql://render:render@localhost:5432/render"
+ENV DATABASE_URL=${DATABASE_URL}
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV NODE_ENV=production
