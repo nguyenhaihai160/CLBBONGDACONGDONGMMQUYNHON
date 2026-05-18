@@ -14,15 +14,15 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY backend/package*.json ./backend/
-RUN cd backend && npm install --no-audit --no-fund --legacy-peer-deps
+RUN cd backend && npm install --include=dev --no-audit --no-fund --legacy-peer-deps
 
 COPY frontend/package*.json ./frontend/
-RUN cd frontend && npm install --no-audit --no-fund --legacy-peer-deps
+RUN cd frontend && npm install --include=dev --no-audit --no-fund --legacy-peer-deps
 
 COPY backend ./backend
 COPY frontend ./frontend
 
-RUN cd backend && npx prisma generate && npm run build
+RUN cd backend && ./node_modules/.bin/prisma generate && npm run build
 RUN cd frontend && npm run build
 
 ENV NODE_ENV=production
@@ -31,4 +31,4 @@ ENV FRONTEND_DIST_PATH=/app/frontend/dist
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "cd /app/backend && npx prisma db push --accept-data-loss && (npx prisma db seed || echo 'Seed warning - continuing') && node dist/server.js"]
+CMD ["sh", "-c", "cd /app/backend && ./node_modules/.bin/prisma db push --accept-data-loss && (npm run prisma:seed || echo 'Seed warning - continuing') && node dist/server.js"]
