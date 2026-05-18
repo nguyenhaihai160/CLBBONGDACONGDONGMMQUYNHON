@@ -5,6 +5,8 @@ WORKDIR /app
 ENV NPM_CONFIG_AUDIT=false
 ENV NPM_CONFIG_FUND=false
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+ENV NPM_CONFIG_PROGRESS=false
+ENV NPM_CONFIG_LOGLEVEL=warn
 ENV NPM_CONFIG_FETCH_RETRIES=5
 ENV NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000
 ENV NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
@@ -13,11 +15,13 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
+RUN npm install -g npm@10
+
 COPY backend/package*.json ./backend/
-RUN cd backend && npm install --include=dev --no-audit --no-fund --legacy-peer-deps
+RUN cd backend && npm ci --include=dev --no-audit --no-fund --legacy-peer-deps
 
 COPY frontend/package*.json ./frontend/
-RUN cd frontend && npm install --include=dev --no-audit --no-fund --legacy-peer-deps
+RUN cd frontend && npm ci --include=dev --no-audit --no-fund --legacy-peer-deps
 
 COPY backend ./backend
 COPY frontend ./frontend
