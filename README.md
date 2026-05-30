@@ -1,15 +1,3 @@
-# Bản tối ưu 2026-05-17
-
-Khuyên dùng chạy bằng Docker single-port:
-
-```bash
-docker compose up -d --build
-```
-
-Mở `http://localhost:5173` trên máy tính hoặc `http://IP_MAY_TINH:5173` trên điện thoại cùng WiFi. Xem thêm `OPTIMIZED_RUN_GUIDE.md`.
-
----
-
 # Football Academy Manager Pro - Instagram-like Online Upgrade
 
 Bản này đã được nâng cấp giao diện mobile-first giống app hiện đại: bottom navigation, activity feed, quick actions, story bubble, single-port API và cấu hình deploy online HTTPS. Xem thêm `INSTAGRAM_LIKE_UPGRADE_GUIDE.md`.

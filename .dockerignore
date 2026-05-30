@@ -2,11 +2,7 @@
 **/dist
 **/.vite
 **/.cache
-**/.turbo
-**/coverage
-**/*.log
 .git
-.gitignore
 .DS_Store
-backups
-*.zip
+npm-debug.log*
+Dockerfile.old

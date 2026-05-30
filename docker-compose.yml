@@ -3,13 +3,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-football}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-football}
-      POSTGRES_DB: ${POSTGRES_DB:-football_academy}
+      POSTGRES_USER: football
+      POSTGRES_PASSWORD: football
+      POSTGRES_DB: football_academy
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-football} -d ${POSTGRES_DB:-football_academy}"]
+      test: ["CMD-SHELL", "pg_isready -U football -d football_academy"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -24,7 +24,7 @@ services:
       PORT: 5173
       NODE_ENV: production
       FRONTEND_DIST_PATH: /app/frontend/dist
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      FRONTEND_URL: http://localhost:5173
     ports:
       - "5173:5173"
     depends_on:

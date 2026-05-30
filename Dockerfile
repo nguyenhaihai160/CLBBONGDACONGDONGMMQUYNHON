@@ -1,34 +1,42 @@
+# Production-like single-port image.
+# Backend serves both React build and /api, so phone only needs http://IP_MAY_TINH:5173.
+# This Dockerfile intentionally copies ONLY package.json first, not package-lock.json.
+# Some exported lockfiles may contain stale/private registry URLs and can make npm hang with
+# "Exit handler never called!" during Docker builds.
 FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-ARG DATABASE_URL="postgresql://render:render@localhost:5432/render"
-ENV DATABASE_URL=${DATABASE_URL}
-
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-ENV NODE_ENV=production
-ENV PORT=10000
-ENV FRONTEND_DIST_PATH=/app/frontend/dist
+ENV NPM_CONFIG_REGISTRY=https://registry.npmjs.org/ \
+    NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_FUND=false \
+    NPM_CONFIG_UPDATE_NOTIFIER=false \
+    NPM_CONFIG_FETCH_RETRIES=5 \
+    NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000 \
+    NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000 \
+    NPM_CONFIG_FETCH_TIMEOUT=600000
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install -g npm@10.9.2
 
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+COPY backend/package.json ./backend/package.json
+RUN cd backend && npm install --no-audit --no-fund --legacy-peer-deps
 
-COPY backend/package*.json ./backend/
-RUN cd backend && pnpm install --frozen-lockfile=false --prod=false
-
-COPY frontend/package*.json ./frontend/
-RUN cd frontend && pnpm install --frozen-lockfile=false --prod=false
+COPY frontend/package.json ./frontend/package.json
+RUN cd frontend && npm install --no-audit --no-fund --legacy-peer-deps
 
 COPY backend ./backend
 COPY frontend ./frontend
 
-RUN cd backend && pnpm exec prisma generate && pnpm run build
-RUN cd frontend && pnpm run build
+RUN cd backend && npx prisma generate && npm run build
+RUN cd frontend && npm run build
 
-EXPOSE 10000
+ENV NODE_ENV=production
+ENV PORT=5173
+ENV FRONTEND_DIST_PATH=/app/frontend/dist
 
-CMD ["sh", "-c", "cd /app/backend && pnpm exec prisma db push --accept-data-loss && (pnpm run prisma:seed || echo 'Seed warning - continuing') && node dist/server.js"]
+EXPOSE 5173
+
+CMD ["sh", "-c", "cd /app/backend && npx prisma db push --accept-data-loss && (npx prisma db seed || echo 'Seed warning - continuing') && node dist/server.js"]
