@@ -1,19 +1,16 @@
 {
-  "name": "football-academy-manager-pro",
-  "version": "1.0.1-optimized",
+  "name": "football-academy-manager-pro-render",
+  "version": "1.0.0",
   "private": true,
-  "description": "Root scripts for Football Academy Manager Pro. Chạy lệnh ở thư mục gốc sẽ không còn lỗi thiếu package.json.",
+  "description": "He thong quan ly hoc vien bong da - GitHub + Render deployment",
+  "engines": {
+    "node": ">=20 <23"
+  },
   "scripts": {
-    "install:all": "npm --prefix backend ci --no-audit --no-fund && npm --prefix frontend ci --no-audit --no-fund",
-    "dev": "npm --prefix frontend run dev -- --host 0.0.0.0",
-    "dev:frontend": "npm --prefix frontend run dev -- --host 0.0.0.0",
-    "dev:backend": "npm --prefix backend run dev",
-    "build": "npm --prefix backend run build && npm --prefix frontend run build",
-    "build:frontend": "npm --prefix frontend run build",
-    "build:backend": "npm --prefix backend run build",
-    "docker:up": "docker compose up -d --build",
-    "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f app",
-    "docker:reset": "docker compose down -v && docker compose up -d --build"
+    "install:all": "npm ci --prefix backend --no-audit --no-fund && npm ci --prefix frontend --no-audit --no-fund",
+    "build": "npm run install:all && npm --prefix backend run prisma:generate && npm --prefix backend run build && npm --prefix frontend run build",
+    "render:build": "npm run build",
+    "render:start": "npm --prefix backend run db:sync && npm --prefix backend run bootstrap:admin && npm --prefix backend run start",
+    "db:seed:demo": "npm --prefix backend run prisma:seed"
   }
 }
