@@ -1,0 +1,340 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  COACH
+  PARENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StudentStatus {
+  ACTIVE
+  PAUSED
+  INACTIVE
+}
+
+enum FeeType {
+  MONTHLY
+  PACKAGE
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  EXCUSED
+}
+
+enum UniformType {
+  SHIRT
+  SHORTS
+  SOCKS
+  KIT
+  BALL
+  CONE
+  BIB
+  LADDER
+  MARKER
+  OTHER
+}
+
+enum InventoryTransactionType {
+  IMPORT
+  EXPORT
+  ADJUST
+  SALE
+  DELETE
+  RESTORE
+}
+
+enum UniformOrderStatus {
+  UNPAID
+  PAID
+  CANCELLED
+}
+
+enum ZaloMessageType {
+  TUITION_REMINDER
+  TRAINING_SCHEDULE
+  DAY_OFF
+  CUSTOM
+}
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  passwordHash    String
+  fullName        String
+  phone           String?
+  role            Role          @default(COACH)
+  status          UserStatus    @default(ACTIVE)
+  coachClasses    Class[]       @relation("CoachClasses")
+  createdStudents Student[]     @relation("CreatedStudents")
+  markedAttendance Attendance[] @relation("MarkedBy")
+  confirmedPayments Payment[]   @relation("ConfirmedBy")
+  uniformOrders   UniformOrder[] @relation("UniformOrderCreator")
+  notes           StudentNote[] @relation("NoteCreator")
+  auditLogs       AuditLog[]
+  inventoryTransactions InventoryTransaction[] @relation("InventoryActionBy")
+  parentStudents  ParentStudent[] @relation("ParentStudentAccount")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Class {
+  id            String             @id @default(cuid())
+  name          String
+  ageGroup      String
+  feeAmount     Decimal            @db.Decimal(12, 2)
+  feeType       FeeType            @default(MONTHLY)
+  totalSessions Int                @default(12)
+  isActive      Boolean            @default(true)
+  coachId       String?
+  coach         User?              @relation("CoachClasses", fields: [coachId], references: [id], onDelete: SetNull)
+  students      Student[]
+  schedules     TrainingSchedule[]
+  attendances   Attendance[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model TrainingField {
+  id        String             @id @default(cuid())
+  name      String
+  address   String?
+  note      String?
+  schedules TrainingSchedule[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+model TrainingSchedule {
+  id        String         @id @default(cuid())
+  classId   String
+  class     Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  fieldId   String?
+  field     TrainingField? @relation(fields: [fieldId], references: [id], onDelete: SetNull)
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  note      String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([classId, dayOfWeek])
+  @@index([fieldId, dayOfWeek])
+  @@index([dayOfWeek, startTime])
+}
+
+model Student {
+  id                  String          @id @default(cuid())
+  studentCode          String          @unique
+  fullName             String
+  dateOfBirth          DateTime?
+  parentPhone          String
+  address              String?
+  avatarUrl            String?
+  classId              String?
+  class                Class?          @relation(fields: [classId], references: [id], onDelete: SetNull)
+  status               StudentStatus   @default(ACTIVE)
+  tuitionStatus        PaymentStatus   @default(PENDING)
+  sessionTotal         Int             @default(0)
+  sessionUsed          Int             @default(0)
+  sessionRemaining     Int             @default(0)
+  createdById          String?
+  createdBy            User?           @relation("CreatedStudents", fields: [createdById], references: [id], onDelete: SetNull)
+  attendanceHistories  Attendance[]
+  paymentHistories     Payment[]
+  uniformOrders        UniformOrder[]
+  notes                StudentNote[]
+  zaloMessages         ZaloMessage[]
+  parentAccounts       ParentStudent[]
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+}
+
+model ParentStudent {
+  id        String   @id @default(cuid())
+  parentId  String
+  parent    User     @relation("ParentStudentAccount", fields: [parentId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([parentId, studentId])
+  @@index([parentId])
+  @@index([studentId])
+}
+
+model Attendance {
+  id          String           @id @default(cuid())
+  studentId   String
+  student     Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId     String
+  class       Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  date        DateTime
+  status      AttendanceStatus
+  note        String?
+  markedById  String?
+  markedBy    User?            @relation("MarkedBy", fields: [markedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([studentId, classId, date])
+  @@index([classId, date])
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  studentId       String
+  student         Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  amount          Decimal       @db.Decimal(12, 2)
+  paidAmount      Decimal       @db.Decimal(12, 2)
+  debtAmount      Decimal       @db.Decimal(12, 2)
+  feeType         FeeType       @default(MONTHLY)
+  packageSessions Int?
+  sessionsApplied Boolean       @default(false)
+  month           String?
+  status          PaymentStatus @default(PENDING)
+  bankCode        String?
+  transferContent String?
+  qrPayload       String?
+  confirmedById   String?
+  confirmedBy     User?         @relation("ConfirmedBy", fields: [confirmedById], references: [id], onDelete: SetNull)
+  confirmedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([studentId, status])
+}
+
+model UniformProduct {
+  id          String                 @id @default(cuid())
+  name        String
+  type        UniformType
+  size        String
+  sku         String?                @unique
+  note        String?
+  price       Decimal                @db.Decimal(12, 2)
+  stock       Int                    @default(0)
+  minStock    Int                    @default(3)
+  isActive    Boolean                @default(true)
+  deletedAt   DateTime?
+  orderItems  UniformOrderItem[]
+  transactions InventoryTransaction[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  @@unique([name, size])
+}
+
+model InventoryTransaction {
+  id             String                   @id @default(cuid())
+  productId      String
+  product        UniformProduct           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type           InventoryTransactionType
+  quantityChange Int
+  beforeStock    Int
+  afterStock     Int
+  note           String?
+  createdById    String?
+  createdBy      User?                    @relation("InventoryActionBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime                 @default(now())
+
+  @@index([productId, createdAt])
+}
+
+model UniformOrder {
+  id          String             @id @default(cuid())
+  studentId   String
+  student     Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  totalAmount Decimal            @db.Decimal(12, 2)
+  status      UniformOrderStatus @default(UNPAID)
+  paidAt      DateTime?
+  createdById String?
+  createdBy   User?              @relation("UniformOrderCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  items       UniformOrderItem[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model UniformOrderItem {
+  id        String         @id @default(cuid())
+  orderId   String
+  order     UniformOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   UniformProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity  Int
+  unitPrice Decimal        @db.Decimal(12, 2)
+  subtotal  Decimal        @db.Decimal(12, 2)
+}
+
+model StudentNote {
+  id          String   @id @default(cuid())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  note        String
+  createdById String?
+  createdBy   User?    @relation("NoteCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+}
+
+model ZaloConnection {
+  id           String   @id @default(cuid())
+  oaId         String
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ZaloMessage {
+  id          String          @id @default(cuid())
+  parentPhone String
+  studentId   String?
+  student     Student?        @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  type        ZaloMessageType
+  content     String
+  status      String          @default("QUEUED")
+  sentAt      DateTime?
+  createdAt   DateTime        @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+model AcademySetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
